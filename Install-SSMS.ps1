@@ -6,6 +6,9 @@ Function Install-SSMS {
     .DESCRIPTION
         This will download and install the latest available SSMS from Microsoft.
 
+    .PARAMETER DoNotInstallAzureDataStudio
+        This will prevent the installation of Azure Data Studio
+
     .PARAMETER WriteLog
         You want to log to a file. It will generate more than a few files :)
 
@@ -43,6 +46,9 @@ Function Install-SSMS {
         [string]$LocalFile,
 
         [parameter(Mandatory = $false)]
+        [bool]$DoNotInstallAzureDataStudio = $false,
+
+        [parameter(Mandatory = $false)]
         [bool]$WriteLog = $false,
 
         [parameter(Mandatory = $false)]
@@ -54,6 +60,10 @@ Function Install-SSMS {
 
     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
     $outFile = "$temp\SSMS-Setup-ENU.exe"
+
+    if ($DoNotInstallAzureDataStudio -eq $true) {
+        $argList += "DoNotInstallAzureDataStudio=1"
+    }
 
     if ($WriteLog -eq $true) {
         $logFile = "$temp\SSMS_$(Get-Date -Format `"yyyyMMddHHmm`").txt"
@@ -73,16 +83,19 @@ Function Install-SSMS {
                 try {
                     $ProgressPreference = "SilentlyContinue"
                     Invoke-WebRequest $url -OutFile $outFile -UseBasicParsing
-                } catch {
+                }
+                catch {
                     (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                     Invoke-WebRequest $url -OutFile $outFile -UseBasicParsing
                 }
-            } catch {
+            }
+            catch {
                 Write-Output "Download failed. Please download manually from $url."
                 return
             }
         }
-    } else {
+    }
+    else {
         $outFile = $LocalFile
     }
 
@@ -100,11 +113,13 @@ Function Install-SSMS {
 
                 if ($process.ExitCode -ne 0) {
                     Write-Output "$_ exited with status code $($process.ExitCode). Check the error code here: https://docs.microsoft.com/en-us/windows/win32/msi/error-codes"
-                } else {
+                }
+                else {
                     Write-Output "Instalation was sucessfull!"
                 }
             }
-        } else {
+        }
+        else {
             Write-Output "$outFile does not exist. Probably the download failed."
         }
     }
