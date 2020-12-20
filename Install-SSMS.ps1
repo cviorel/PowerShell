@@ -233,7 +233,3 @@ Function Install-SSMS {
         }
     }
 }
-
-
-
-Install-SSMS -InstallAzureDataStudio $false -WriteLog $true #-LocalFile C:\Users\Administrator\Downloads\SSMS-Setup-ENU.exe
