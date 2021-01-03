@@ -1,4 +1,4 @@
-# DISCLAIMER:
+# DISCLAIMER
 
 Feel free to use and modify to your needs.
 
