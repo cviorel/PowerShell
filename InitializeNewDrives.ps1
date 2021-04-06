@@ -14,7 +14,7 @@
 Stop-Service -Name ShellHWDetection
 
 ### Grabs all the new RAW disks into a variable ###
-$disk = Get-Disk | Where-Object partitionstyle -eq 'RAW'
+$disk = Get-Disk | Where-Object { $_.PartitionStyle -eq 'RAW' -and $null -ne $_.Number }
 
 ### Starts a foreach loop that will add the drive
 ### and format the drive for each RAW drive
@@ -22,7 +22,7 @@ $disk = Get-Disk | Where-Object partitionstyle -eq 'RAW'
 foreach ($d in $disk) {
     $diskNumber = $d.Number
     $dl = Get-Disk $d.Number | Initialize-Disk -PartitionStyle GPT -PassThru | New-Partition -AssignDriveLetter -UseMaximumSize
-    Format-Volume -driveletter $dl.Driveletter -FileSystem NTFS -AllocationUnitSize 65536 -NewFileSystemLabel "New Disk $diskNumber" -Confirm:$false
+    Format-Volume -DriveLetter $dl.Driveletter -FileSystem NTFS -AllocationUnitSize 65536 -NewFileSystemLabel "New Disk $diskNumber" -Confirm:$false
     ### 2 Second pause between each disk ###
     ### Initialization, Partitioning, and formatting ###
     Start-Sleep 2
