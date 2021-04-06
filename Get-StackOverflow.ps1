@@ -1,25 +1,23 @@
 <#
 .SYNOPSIS
-    Download the attach the Stack Overflow Database
+    Attach the Stack Overflow Database
 
 .DESCRIPTION
-    Download the attach the Stack Overflow Database
+    Attach the Stack Overflow Database
 
     https://www.brentozar.com/archive/2015/10/how-to-download-the-stack-overflow-database-via-bittorrent/
 
     Prerequisites:
         - dbatools and 7Zip4PowerShell PowerShell modules. If they are not present, they will be installed from the official PSGallery
 
-.PARAMETER Size
-    Choose the database size:
-        Small: 10GB database as of 2010.
-            Expands to a ~10GB database called StackOverflow2010 with data from the years 2008 to 2010.
-
-        Medium: 50GB database as of 2013.
-            Expands to a ~50GB database called StackOverflow2013 with data from 2008 to 2013.
+.PARAMETER Url
+    The url for the 7z file. It can be:
+        - local file:     'D:\Temp\StackOverflow2010.7z'
+        - network share:  '\\SERVER\sharedFolder\StackOverflow2010.7z'
+        - web location:   'https://downloads.yourdomain.local/StackOverflow2010.7z'
 
 .PARAMETER Path
-    The location to download the 7z file
+    The location to extract the 7z file
 
 .PARAMETER SqlInstance
     The SqlInstance where the files will be attached
@@ -39,23 +37,31 @@
     License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
-    Get-StackOverflow -Size Small -Path C:\Temp\StackOverflow -SqlInstance 'server\instance' -SqlCredential (Get-Credential sa)
+    Get-StackOverflow -Url C:\Temp\StackOverflow2010.7z -Path C:\Temp -SqlInstance 'server\instance' -SqlCredential (Get-Credential sa)
 
-    Download and attach the small StackOverflow database and restore it to 'server\instance' instance.
-    User needs to provide the SA credential
+    Extract C:\Temp\StackOverflow2010.7z and attach the files to 'server\instance' instance.
+    User needs to provide the SA credential.
 
 .EXAMPLE
-    Get-StackOverflow -Size Small -Path C:\Temp\StackOverflow -SqlInstance 'server\instance'
+    Get-StackOverflow -Url "\\SERVER\sharedFolder\StackOverflow2010.7z" -Path C:\Temp -SqlInstance 'server\instance'
 
-    Download and attach the small StackOverflow database and restore it to 'server\instance' instance.
+    Extract '\\SERVER\sharedFolder\StackOverflow2010.7z' and attach the files to 'server\instance' instance.
+    Windows Authentication is used to connect to the SQL instance.
+
+.EXAMPLE
+    Get-StackOverflow -Url "https://downloads.yourdomain.local/StackOverflow2010.7z" -Path Q:\Temp -SqlInstance 'localhost,10001' -DataPath D:\MSSQL\Data -LogPath L:\MSSQL\Log
+
+    Downloads StackOverflow2010.7z from the specified domain and save it to Q:\Temp.
+    If the file already exists, the existing file will be used.
+    Extract StackOverflow2010.7z to Q:\Temp, move the .mdf and .ndf files to 'D:\MSSQL\Data' and .ldf files to 'L:\MSSQL\Log'.
+    Finally, the files are attached to 'localhost,10001' instance.
     Windows Authentication is used to connect to the SQL instance.
 #>
 function Get-StackOverflow {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Small', 'Medium')]
-        [string]$Size,
+        [string]$Url,
 
         [Parameter(Mandatory = $true)]
         [string]$Path,
@@ -75,50 +81,48 @@ function Get-StackOverflow {
         [string]$LogPath
     )
 
-    Switch ($Size) {
-        'Small' { $url = 'https://downloads.brentozar.com/StackOverflow2010.7z' }
-        'Medium' { $url = 'https://downloads.brentozar.com/StackOverflow2013_201809117.7z' }
-    }
-
-    if ($LocalFile) {
-        if (-not (Test-Path -Path $LocalFile)) {
-            Write-Error "$LocalFile doesn't exist!"
-            return
+    $testUrl = $Url -as [System.URI]
+    if ($null -ne $testUrl.AbsoluteURI) {
+        if ($testUrl.Scheme -match 'http|https') {
+            $LocalFile = $false
         }
-        if (-not ($LocalFile.EndsWith('.7z'))) {
-            Write-Error "$LocalFile should be a 7z file!"
-            return
+
+        if ($testUrl.Scheme -eq 'file') {
+            $LocalFile = $true
         }
     }
 
-    if ($Path) {
-        $Path = $Path.TrimEnd("\")
-        if (-not (Test-Path $Path)) {
-            New-Item -Path $Path -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
-        }
-        $outFile = $url | Split-Path -Leaf
+    $outFile = $Url | Split-Path -Leaf
+
+    $Path = $Path.TrimEnd("\")
+    if (-not (Test-Path $Path)) {
+        New-Item -Path $Path -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
     }
 
-    if (Test-Path -Path "$Path\$outFile") {
-        $LocalFile = "$Path\$outFile"
-        $outFile = $LocalFile
-        Write-Output "Local copy already exist ($LocalFile). Let's use it!"
-    }
-    else {
-        try {
-            # Create SSL/TLS secure channel
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    if ($LocalFile -eq $false) {
+        $localFileName = "$Path\$outFile"
+        if (!(Test-Path -Path $localFileName)) {
             try {
-                $ProgressPreference = "SilentlyContinue"
-                Invoke-WebRequest $url -OutFile "$Path\$outFile" -UseBasicParsing
+                # Create SSL/TLS secure channel
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                try {
+                    $ProgressPreference = "SilentlyContinue"
+                    Invoke-WebRequest $Url -OutFile "$localFileName" -UseBasicParsing
+                }
+                catch {
+                    (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                    Invoke-WebRequest $Url -OutFile "$localFileName" -UseBasicParsing
+                }
             }
             catch {
-                (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                Invoke-WebRequest $url -OutFile "$Path\$outFile" -UseBasicParsing
+                Write-Output "Download failed. Please download manually from $Url."
+                return
             }
         }
-        catch {
-            Write-Output "Download failed. Please download manually from $url."
+    } else {
+        $localFileName = $Url
+        if (!(Test-Path -Path $localFileName)) {
+            Write-Error "Could not find $localFileName!"
             return
         }
     }
@@ -150,17 +154,11 @@ function Get-StackOverflow {
     #endregion Install Powershell modules
 
     #region extract
-    if (Test-Path -Path $outFile) {
-        try {
-            Expand-7Zip -ArchiveFileName "$outFile" -TargetPath $Path
-        }
-        catch {
-            Write-Error "Could not extract $outFile! The file might be corrupted!"
-            return
-        }
+    try {
+        Expand-7Zip -ArchiveFileName "$localFileName" -TargetPath $Path
     }
-    else {
-        Write-Error "Could not find $outFile!"
+    catch {
+        Write-Error "Could not extract "$localFileName"! The file might be corrupted!"
         return
     }
     #endregion extract
