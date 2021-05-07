@@ -1,3 +1,5 @@
+#Requires -RunAsAdministrator
+
 Write-Host "Checking for Windows Subsystem for Linux..."
 $rebootRequired = $false
 if ((Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State -ne 'Enabled') {
@@ -85,9 +87,7 @@ if ($rebootRequired) {
 # Ubuntu1804 run apt upgrade
 
 
-# #wget https://archive.kali.org/archive-key.asc -O /etc/apt/trusted.gpg.d/kali-archive-key.asc
+# sudo wget https://archive.kali.org/archive-key.asc -O /etc/apt/trusted.gpg.d/kali-archive-key.asc
 
-# sudo apt-get update
-# sudo apt-get upgrade -y
-# sudo apt-get dist-upgrade -y
-# sudo apt-get autoremove -y
+# sudo apt-get update && sudo apt-get upgrade -y && sudo apt-get dist-upgrade -y && sudo apt-get autoremove -y
+# sudo apt-get install python3-pip -y
