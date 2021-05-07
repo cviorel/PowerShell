@@ -3,6 +3,7 @@
 # https://thinkpowershell.com/powershell-set-up-hyper-v-lab/
 # https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v
 # https://techcommunity.microsoft.com/t5/virtualization/windows-nat-winnat-capabilities-and-limitations/ba-p/382303
+# https://www.youtube.com/watch?v=PYamsYQSmFY
 
 Write-Host "Checking for Hyper-V..."
 $rebootRequired = $false
