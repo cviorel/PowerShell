@@ -11,7 +11,7 @@ Function Install-SSMS {
         If the local file is not the latest released, the user will be prompted to download the latest one available.
         If this parameter is not specified, the latest version will be downloaded and installed from https://aka.ms/ssmsfullsetup
 
-    .PARAMETER InstallAzureDataStudio
+    .PARAMETER DoNotInstallAzureDataStudio
         This will prevent the installation of Azure Data Studio
 
     .PARAMETER WriteLog
@@ -65,7 +65,7 @@ Function Install-SSMS {
         [switch]$IgnoreUpdate,
 
         [parameter(Mandatory = $false)]
-        [bool]$InstallAzureDataStudio = $false,
+        [bool]$DoNotInstallAzureDataStudio = $true,
 
         [parameter(Mandatory = $false)]
         [bool]$WriteLog = $false,
@@ -190,7 +190,7 @@ Function Install-SSMS {
         }
     }
 
-    if ($InstallAzureDataStudio -eq $false) {
+    if ($DoNotInstallAzureDataStudio -eq $true) {
         $argList += "DoNotInstallAzureDataStudio=1"
     }
 
