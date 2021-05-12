@@ -27,14 +27,8 @@ wevtutil el | ForEach-Object { Write-Host "Clearing $_"; wevtutil cl "$_" }
 # . .\Set-PageFile.ps1
 # Set-PageFile "C:\pagefile.sys"
 
-
-
-
 # Write-Host "Installing Steam"
 # choco install -y steam-client
 
 # Write-Host "Installing Origin"
 # choco install -y origin
-
-# Write-Host "Installing uPlay"
-# choco install -y uplay
