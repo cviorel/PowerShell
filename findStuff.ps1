@@ -1,10 +1,8 @@
-
-
 function findStuff {
     param (
         $String
     )
-    
+
     $String = [regex]::Escape($String)
 
     $myLocations = @(
@@ -17,9 +15,7 @@ function findStuff {
     foreach ($location in $myLocations) {
         $results += (Select-String -Pattern $String -Path (Get-ChildItem -Recurse -Path $location | Where-Object { ($_.PSIsContainer -eq $false) -and ($excludes -notcontains $_.Extension) })) -join "`r`n"
     }
-    
+
     Write-Output $results
 
 }
-
-

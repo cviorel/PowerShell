@@ -1,5 +1,4 @@
-﻿
-function Add-ToPath {
+﻿function Add-ToPath {
     param(
         [string]$Directory
     )

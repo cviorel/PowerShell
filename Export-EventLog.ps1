@@ -1,6 +1,4 @@
-﻿
-
-# Config
+﻿# Config
 $logFileName = "Application" # Add Name of the Logfile (System, Application, etc)
 $path = "C:\temp\" # Add Path, needs to end with a backsplash
 
