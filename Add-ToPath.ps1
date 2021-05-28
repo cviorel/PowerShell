@@ -14,6 +14,6 @@
     }
 
     if ( $PATH -notlike "*" + $Directory + "*" ) {
-        [Environment]::SetEnvironmentVariable("PATH", "$PATH;$Directory", "Machine")
+        [Environment]::SetEnvironmentVariable("PATH", "$PATH;$Directory", "User")
     }
 }

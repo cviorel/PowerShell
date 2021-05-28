@@ -51,8 +51,7 @@ $gen = (Get-VM -Name $vmName).Generation
 
 if ($gen -eq 1) {
     Set-VMBios -VMName $vmName -StartupOrder CD
-}
-else {
+} else {
     Set-VMFirmware -VMName $vmName -FirstBootDevice ((Get-VMFirmware -VMName $vmName).BootOrder | Where-Object Device -Like *DvD*).Device
     Set-VMFirmware -VMName $vmName -EnableSecureBoot On -SecureBootTemplate MicrosoftWindows
 }

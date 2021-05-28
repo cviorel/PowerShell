@@ -4,10 +4,14 @@
 
 	.EXAMPLE
 		PS> .\Invoke-WindowsDiskCleanup.ps1
+    .NOTES
+        https://ss64.com/nt/cleanmgr.html
+        https://ss64.com/nt/cleanmgr-registry.html
 
-#>
 
-Write-Output 'Clearing CleanMgr.exe automation settings'
+        #>
+
+Write-Output ':: Clearing CleanMgr.exe automation settings'
 
 $getItemParams = @{
     Path        = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\*'
@@ -51,20 +55,41 @@ $enabledSections = @(
     'Windows Upgrade Log Files'
 )
 
-Write-Verbose -Message 'Adding enabled disk cleanup sections...'
+Write-Output ':: Adding enabled disk cleanup sections...'
 foreach ($keyName in $enabledSections) {
     $newItemParams = @{
         Path         = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\$keyName"
         Name         = 'StateFlags0001'
-        Value        = 1
+        Value        = 2
         PropertyType = 'DWord'
         ErrorAction  = 'SilentlyContinue'
     }
     $null = New-ItemProperty @newItemParams
 }
 
-Write-Verbose -Message 'Starting CleanMgr.exe...'
+Write-Output ':: Starting CleanMgr.exe...'
 Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -NoNewWindow -Wait
 
-Write-Verbose -Message 'Waiting for CleanMgr and DismHost processes...'
+Write-Output ':: Waiting for CleanMgr and DismHost processes...'
 Get-Process -Name cleanmgr, dismhost -ErrorAction SilentlyContinue | Wait-Process
+
+Write-Output ":: Clear recent items"
+$directories = @(
+    "$env:APPDATA\Microsoft\Windows\Recent",
+    "$env:APPDATA\Microsoft\Windows\Recent\AutomaticDestinations",
+    "$env:APPDATA\Microsoft\Windows\Recent\CustomDestinations"
+)
+
+$directories | ForEach-Object {
+    if (Test-Path "$_") {
+        Get-ChildItem -Path "$_\*" -File -Force | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Cleaning up unused devices REF:https://www.uwe-sieber.de/misc_tools_e.html
+if (Test-Path -Path 'C:\Tools\DeviceCleanupCmd\x64\DeviceCleanupCmd.exe') {
+    Write-Output ":: Cleaning up all unused devices from the system."
+    Start-Process -FilePath 'C:\Tools\DeviceCleanupCmd\x64\DeviceCleanupCmd.exe' -ArgumentList '-s -n *'
+    Get-Process -Name DeviceCleanupCmd -ErrorAction SilentlyContinue | Wait-Process
+    Write-Output ":: Device cleanup complete."
+}

@@ -41,8 +41,8 @@ if ($rebootRequired) {
     Set-VMHost -VirtualHardDiskPath $vdPath
     Set-VMHost -VirtualMachinePath $vmPath
 
-    $SwitchName = "Internal"
-    $NatName = "NAT"
+    $SwitchName = "HYPER-V-NAT-Network"
+    $NatName = "HYPER-V-NAT-Network"
     $SwitchIp = "192.168.10.1"
     $PrefixLength = 24
 
