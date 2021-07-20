@@ -21,6 +21,7 @@ if (!($ServerList)) {
     $Servers = Get-Content $ServerList
 }
 
+$SessionList = @()
 # Loop through the list to query each server for login sessions
 ForEach ($ServerName in $Servers) {
 
@@ -39,10 +40,12 @@ ForEach ($ServerName in $Servers) {
         If (($RDPUser -match "[a-z]") -and ($RDPUser -ne $NULL)) {
             # When running interactively, uncomment the Write-Host line below to show the output to screen
             # Write-Host $ServerName logged in by $RDPUser on $sessionType
-            $SessionList = $SessionList + "`n`n" + $ServerName + " logged in by " + $RDPUser + " on " + $sessionType
+            $SessionList += $ServerName + " logged in by " + $RDPUser + " on " + $sessionType
         }
     }
 }
+$SessionList
+
 
 # Send the report email
 if ($smtpServer -ne "" -or ($PSEmailServer)) {
