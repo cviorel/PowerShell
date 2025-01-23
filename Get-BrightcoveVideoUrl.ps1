@@ -15,7 +15,7 @@
     The ID of the Brightcove player. If not specified, the default player will be used.
 
 .EXAMPLE
-    Get-BrightcoveVideoUrl -AccountID "2812541250001" -VideoID "6238159450001" -PlayerID "default"
+    Get-BrightcoveVideoUrl -AccountID "1712641351001" -VideoID "6232757450011" -PlayerID "default"
     Retrieves the URL of the Brightcove video with the specified AccountID, VideoID, and PlayerID.
 
 .NOTES
