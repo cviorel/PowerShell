@@ -6,7 +6,6 @@ $packages = @(
     "Git.Git",
     "Google.Chrome",
     "JanDeDobbeleer.OhMyPosh",
-    "Microsoft.AzureDataStudio",
     "Microsoft.PowerShell",
     "Microsoft.VisualStudioCode",
     "Mozilla.Firefox",
