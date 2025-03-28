@@ -6,9 +6,6 @@
         Invoke-WindowsDiskCleanup configures and runs the Windows Disk Cleanup utility (cleanmgr.exe)
         with all cleanup options enabled. It also optionally cleans up recent items and unused devices.
 
-    .PARAMETER SkipRecentItems
-        If specified, the script will not clear recent items.
-
     .PARAMETER DeviceCleanupPath
         Path to the DeviceCleanupCmd.exe utility. If not specified, the script will use the default path
         or skip device cleanup if the utility is not found.
@@ -19,10 +16,6 @@
     .EXAMPLE
         PS> .\Invoke-WindowsDiskCleanup.ps1
         Runs disk cleanup with all default options.
-
-    .EXAMPLE
-        PS> .\Invoke-WindowsDiskCleanup.ps1 -SkipRecentItems
-        Runs disk cleanup but skips clearing recent items.
 
     .EXAMPLE
         PS> .\Invoke-WindowsDiskCleanup.ps1 -DeviceCleanupPath "C:\Tools\DeviceCleanupCmd.exe"
@@ -41,9 +34,6 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $false)]
-    [switch]$SkipRecentItems,
-
-    [Parameter(Mandatory = $false)]
     [string]$DeviceCleanupPath = 'D:\Tools\DeviceCleanupCmd\x64\DeviceCleanupCmd.exe'
 )
 
@@ -57,8 +47,6 @@ if (-not (Test-Administrator)) {
     Write-Error "This script requires administrative privileges. Please run PowerShell as Administrator."
     exit 1
 }
-
-Write-Verbose ':: Clearing CleanMgr.exe automation settings'
 
 Write-Verbose ':: Clearing CleanMgr.exe automation settings'
 
@@ -161,41 +149,36 @@ catch {
     Write-Warning "Error while waiting for cleanup processes: $_"
 }
 
-if (-not $SkipRecentItems) {
-    Write-Output ":: Clearing recent items"
-    $directories = @(
-        "$env:APPDATA\Microsoft\Windows\Recent",
-        "$env:APPDATA\Microsoft\Windows\Recent\AutomaticDestinations",
-        "$env:APPDATA\Microsoft\Windows\Recent\CustomDestinations"
-    )
+Write-Output ":: Clearing recent items"
+$directories = @(
+    "$env:APPDATA\Microsoft\Windows\Recent",
+    "$env:APPDATA\Microsoft\Windows\Recent\AutomaticDestinations",
+    "$env:APPDATA\Microsoft\Windows\Recent\CustomDestinations"
+)
 
-    $totalDirs = $directories.Count
-    $currentDir = 0
+$totalDirs = $directories.Count
+$currentDir = 0
 
-    foreach ($directory in $directories) {
-        $currentDir++
-        Write-Progress -Activity "Clearing Recent Items" -Status "Processing: $directory" -PercentComplete (($currentDir / $totalDirs) * 100)
+foreach ($directory in $directories) {
+    $currentDir++
+    Write-Progress -Activity "Clearing Recent Items" -Status "Processing: $directory" -PercentComplete (($currentDir / $totalDirs) * 100)
 
-        if (Test-Path "$directory") {
-            try {
-                $fileCount = (Get-ChildItem -Path "$directory\*" -File -Force).Count
-                Get-ChildItem -Path "$directory\*" -File -Force | Remove-Item -Force -ErrorAction SilentlyContinue
-                Write-Verbose "Cleared $fileCount files from $directory"
-            }
-            catch {
-                Write-Warning "Failed to clear items from $directory`: $_"
-            }
+    if (Test-Path "$directory") {
+        try {
+            $fileCount = (Get-ChildItem -Path "$directory\*" -File -Force).Count
+            Get-ChildItem -Path "$directory\*" -File -Force | Remove-Item -Force -ErrorAction SilentlyContinue
+            Write-Verbose "Cleared $fileCount files from $directory"
         }
-        else {
-            Write-Verbose "Directory not found: $directory"
+        catch {
+            Write-Warning "Failed to clear items from $directory`: $_"
         }
     }
+    else {
+        Write-Verbose "Directory not found: $directory"
+    }
+}
 
-    Write-Progress -Activity "Clearing Recent Items" -Completed
-}
-else {
-    Write-Verbose "Skipping recent items cleanup as requested"
-}
+Write-Progress -Activity "Clearing Recent Items" -Completed
 
 # Cleaning up unused devices
 if ([string]::IsNullOrEmpty($DeviceCleanupPath)) {
