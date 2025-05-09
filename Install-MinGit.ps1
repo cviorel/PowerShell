@@ -1,39 +1,90 @@
-if (!(Get-Command git -ErrorAction SilentlyContinue)) {
+<#
+.SYNOPSIS
+    Downloads the latest MinGit from GitHub, extracts it to the specified directory, and adds it to the system PATH.
+.DESCRIPTION
+    This script performs the following actions:
+    1. Downloads the latest MinGit release from GitHub
+    2. Creates the installation directory if it doesn't exist
+    3. Extracts MinGit to the installation directory
+    4. Adds the MinGit bin directory to the system PATH
+.PARAMETER InstallPath
+    The path where MinGit will be installed. If not specified, defaults to "$env:LOCALAPPDATA\Git".
+.NOTES
+    Requires administrator privileges to modify the system PATH
+#>
+param(
+    [string]$InstallPath = "$env:LOCALAPPDATA\Git"
+)
 
-  $gitDir = "$env:LOCALAPPDATA\CustomGit"
-  if (Test-Path $gitDir) { Remove-Item -Path $gitDir -Recurse -Force }
-  New-Item -Path $gitDir -ItemType Directory
-  $gitLatestReleaseApi = (Invoke-WebRequest -UseBasicParsing https://api.github.com/repos/git-for-windows/git/releases/latest).Content | ConvertFrom-Json
-  $mingitObject = $gitLatestReleaseApi.assets `
-  | Where-Object { $_.name -match "MinGit-[\d.]*?-64-bit.zip" } `
-  | Select-Object browser_download_url
-
-  Write-Host "Matching asset count: $((Measure-Object -InputObject $mingitObject).Count)"
-
-  if ((Measure-Object -InputObject $mingitObject).Count -eq 1) {
-    $mingitObject `
-    | ForEach-Object { Invoke-WebRequest -Uri $_.browser_download_url -UseBasicParsing -OutFile "$gitDir\mingit.zip" }
-
-    Write-Host "Installing latest release fetched from github api!"
-  }
-  else {
-    Write-Host "There were more than one mingit assets found in the latest release!"
-    Write-Host "Installing release 2.35.1.2 instead!"
-
-    Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.35.1.windows.2/MinGit-2.35.1.2-64-bit.zip" -UseBasicParsing -OutFile "$gitDir\mingit.zip"
-  }
-
-  Expand-Archive -Path "$gitDir\mingit.zip" -DestinationPath "$gitDir"
-  Remove-Item -Path "$gitDir\mingit.zip" -Recurse -Force
-
-  if (([Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User)) -notlike "*$gitDir*") {
-    Write-Host "Updating PATH"
-    [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User) + ";$gitDir\cmd", [System.EnvironmentVariableTarget]::User)
-  }
+# Ensure we're running as administrator for PATH modification
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Warning "This script requires administrator privileges to modify the system PATH."
+    Write-Warning "Please restart this script as an administrator."
+    exit
 }
 
-$gitDir = "C:\Tools\Git"
-if (([Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User)) -notlike "*$gitDir*") {
-  Write-Host "Updating PATH"
-  [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User) + ";$gitDir\cmd", [System.EnvironmentVariableTarget]::User)
+# Create installation directory if it doesn't exist
+$minGitDir = $InstallPath
+
+if (-not (Test-Path -Path $minGitDir)) {
+    Write-Host "Creating MinGit installation directory at $minGitDir"
+    New-Item -ItemType Directory -Path $minGitDir -Force | Out-Null
+}
+
+# Get the latest MinGit release information from GitHub API
+Write-Host "Fetching latest MinGit release information..."
+$apiUrl = "https://api.github.com/repos/git-for-windows/git/releases/latest"
+
+try {
+    $releaseInfo = Invoke-RestMethod -Uri $apiUrl -Headers @{
+        "Accept" = "application/vnd.github.v3+json"
+    }
+
+    # Find the MinGit 64-bit zip asset
+    $minGitAsset = $releaseInfo.assets | Where-Object {
+        $_.name -like "MinGit-*-64-bit.zip" -and $_.name -notlike "*busybox*"
+    } | Select-Object -First 1
+
+    if (-not $minGitAsset) {
+        throw "Could not find MinGit 64-bit zip asset in the latest release"
+    }
+
+    $downloadUrl = $minGitAsset.browser_download_url
+    $version = $releaseInfo.tag_name
+
+    Write-Host "Found MinGit version $version"
+    Write-Host "Download URL: $downloadUrl"
+
+    # Download the MinGit zip file
+    $zipPath = Join-Path $env:TEMP "MinGit.zip"
+    Write-Host "Downloading MinGit to $zipPath..."
+    Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath
+
+    # Extract the zip file to the installation directory
+    Write-Host "Extracting MinGit to $minGitDir..."
+    Expand-Archive -Path $zipPath -DestinationPath $minGitDir -Force
+
+    # Clean up the temporary zip file
+    Remove-Item -Path $zipPath
+
+    # Add MinGit bin directory to the system PATH if it's not already there
+    $binPath = Join-Path $minGitDir "cmd"
+    $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+
+    if ($currentPath -notlike "*$binPath*") {
+        Write-Host "Adding MinGit to system PATH..."
+        $newPath = "$currentPath;$binPath"
+        [Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+        Write-Host "MinGit has been added to the system PATH."
+    } else {
+        Write-Host "MinGit is already in the system PATH."
+    }
+
+    Write-Host "MinGit installation completed successfully!"
+    Write-Host "MinGit is installed at: $minGitDir"
+    Write-Host "You may need to restart your terminal or applications to use git commands."
+
+} catch {
+    Write-Error "An error occurred: $_"
+    exit 1
 }
