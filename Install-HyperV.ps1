@@ -52,7 +52,7 @@ if ($rebootRequired) {
 
     # Create the Internal switch to use for NAT
     $isSwitchCreated = Get-VMSwitch -Name $SwitchName -ErrorAction SilentlyContinue
-    if (!($isSwitchCreated)) {
+    if (-not ($isSwitchCreated)) {
         New-VMSwitch -SwitchName $SwitchName -SwitchType Internal
     }
 
@@ -63,7 +63,9 @@ if ($rebootRequired) {
         New-NetIPAddress -IPAddress $SwitchIp -PrefixLength $PrefixLength -InterfaceIndex $vSwitch.ifIndex
 
         # Create NAT object
-        New-NetNat -Name $NatName -InternalIPInterfaceAddressPrefix 192.168.10.0/24
+        if (-not (Get-NetNat -Name $NatName -ErrorAction SilentlyContinue)) {
+            New-NetNat -Name $NatName -InternalIPInterfaceAddressPrefix 192.168.10.0/24
+        }
     }
 
     # # Cleanup
