@@ -14,14 +14,14 @@ function Invoke-OneFetch {
 
     #$currentRepo = Invoke-Expression "&$gitbin rev-parse --show-toplevel" | Out-Null
     if (Test-Path -Path .git) {
-        $currentRepo = Invoke-Expression "&$gitbin rev-parse --show-toplevel" | Out-Null
+        $currentRepo = Invoke-Expression "& `"$gitBin`" rev-parse --show-toplevel" | Out-Null
     } else {
         Write-Error "Not a Git repo!"
         return
     }
 
     if ($lastRepo -eq $lastRepo) {
-        Invoke-Expression "&$onefetchBin"
+        Invoke-Expression "& `"$onefetchBin`""
         $lastRepo = $currentRepo
     }
 }
