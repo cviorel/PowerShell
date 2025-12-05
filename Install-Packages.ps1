@@ -93,6 +93,7 @@ $packages = @(
     @{ Id = 'Notepad++.Notepad++'; Name = 'Notepad++ Text Editor' },
     @{ Id = 'Google.Chrome'; Name = 'Google Chrome Browser' },
     @{ Id = 'Mozilla.Firefox'; Name = 'Mozilla Firefox Browser' },
+    @{ Id = 'LibreWolf.LibreWolf'; Name = 'LibreWolf Browser' },
     @{ Id = 'OBSProject.OBSStudio'; Name = 'OBS Studio' },
     @{ Id = 'SlackTechnologies.Slack'; Name = 'Slack Communication' },
     @{ Id = 'Zoom.Zoom'; Name = 'Zoom Video Conferencing' },
