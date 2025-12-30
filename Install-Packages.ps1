@@ -98,7 +98,8 @@ $packages = @(
     @{ Id = 'SlackTechnologies.Slack'; Name = 'Slack Communication' },
     @{ Id = 'Zoom.Zoom'; Name = 'Zoom Video Conferencing' },
     @{ Id = 'Discord.Discord'; Name = 'Discord Chat' },
-    @{ Id = 'dotPDN.PaintDotNet'; Name = 'Paint.NET Image Editor' }
+    @{ Id = 'dotPDN.PaintDotNet'; Name = 'Paint.NET Image Editor' },
+    @{ Id = 'Python.Python.3.14'; Name = 'Python 3.14' },
     @{ Id = 'VideoLAN.VLC'; Name = 'VLC Media Player' }
 
     # Additional packages (uncomment as needed)
