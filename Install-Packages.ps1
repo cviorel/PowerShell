@@ -101,7 +101,8 @@ $packages = @(
     @{ Id = 'Discord.Discord'; Name = 'Discord Chat' },
     @{ Id = 'dotPDN.PaintDotNet'; Name = 'Paint.NET Image Editor' },
     @{ Id = 'Python.Python.3.14'; Name = 'Python 3.14' },
-    @{ Id = 'VideoLAN.VLC'; Name = 'VLC Media Player' }
+    @{ Id = 'VideoLAN.VLC'; Name = 'VLC Media Player' },
+    @{ Id = 'astral-sh.uv'; Name = 'uv Python Environment Manager' }
 
     # Additional packages (uncomment as needed)
     # @{ Id = '7zip.7zip'; Name = '7-Zip Archive Manager' },
